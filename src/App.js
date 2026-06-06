@@ -1,0 +1,609 @@
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "./supabase";
+
+const B = "#1A6B8A";
+const BL = "#EBF5FA";
+const W = "#FFFFFF";
+const BG = "#F5F5F5";
+const G1 = "#1A1A1A";
+const G2 = "#555555";
+const G3 = "#999999";
+const G4 = "#C4C4C4";
+const G5 = "#E8E8E8";
+const GR = "#34C759";
+const OR = "#FF9500";
+const RE = "#FF3B30";
+
+const PHRASES = [
+  { t: "Tu as élevé des enfants avec amour — c'est la plus belle des œuvres.", a: null },
+  { t: "Le soleil de Montpellier brille encore en toi.", a: null },
+  { t: "Une femme qui a travaillé toute sa vie porte en elle une force que rien n'efface.", a: null },
+  { t: "Tes petits-enfants voient en toi ce que les mots ne peuvent pas dire.", a: null },
+  { t: "L'amour d'une mère est la lumière que ses enfants portent toute leur vie.", a: null },
+  { t: "On ne voit bien qu'avec le cœur. L'essentiel est invisible pour les yeux.", a: "Antoine de Saint-Exupéry" },
+  { t: "Aimer, c'est agir.", a: "Victor Hugo" },
+  { t: "La vie est belle pour qui sait regarder.", a: null },
+  { t: "Le cœur d'une mère est un abîme sans fond au fond duquel on trouve toujours un pardon.", a: "Honoré de Balzac" },
+  { t: "Là où il y a de l'amour, il y a de la vie.", a: "Gandhi" },
+  { t: "La gratitude est la mémoire du cœur.", a: "Jean-Baptiste Massieu" },
+  { t: "Chaque matin, nous renaissons. Ce que nous faisons aujourd'hui importe le plus.", a: "Bouddha" },
+  { t: "Un cœur qui aime ne vieillit pas.", a: "Proverbe grec" },
+  { t: "الجنة تحت أقدام الأمهات.", a: "Hadith" },
+  { t: "من صبر ظفر.", a: "Proverbe arabe — Qui patiente réussit." },
+  { t: "الابتسامة صدقة.", a: "Hadith — Le sourire est une aumône." },
+  { t: "خير الناس أنفعهم للناس.", a: "Hadith — Le meilleur est celui qui est utile aux autres." },
+  { t: "Lila est là, tout près — et son amour pour toi est immense.", a: null },
+  { t: "Tes enfants sont ta plus belle réussite.", a: null },
+  { t: "Tu as donné tant d'amour — il te revient aujourd'hui multiplié.", a: null },
+  { t: "La joie partagée est une joie doublée.", a: "Goethe" },
+  { t: "Ce que tu as semé avec amour fleurit toujours.", a: null },
+  { t: "Prendre soin de soi est un acte de courage.", a: null },
+  { t: "القناعة كنز لا يفنى.", a: "Proverbe arabe — La sagesse est un trésor inépuisable." },
+  { t: "في كل يوم جديد نعمة جديدة.", a: "Proverbe arabe — Chaque nouveau jour est une nouvelle grâce." },
+  { t: "Aimez et laissez-vous aimer — c'est la sagesse suprême.", a: null },
+  { t: "Ta force vient de tout ce que tu as traversé.", a: null },
+  { t: "Lila t'aime. Tes petits-enfants t'aiment. Tu es entourée.", a: null },
+  { t: "Le vrai voyage de découverte, c'est avoir de nouveaux yeux.", a: "Marcel Proust" },
+  { t: "La paix vient de l'intérieur. Ne la cherchez pas à l'extérieur.", a: "Bouddha" },
+];
+
+const MEDS_MATIN_DEFAULT = [
+  { id: 1, name: "Pantoprazole 20mg", role: "Protège l'estomac des autres médicaments", dose: "1 comprimé entier", moment: "À jeun strict · 1h avant les autres", alert: true },
+  { id: 2, name: "Cosimprel 5mg/5mg", role: "Fait baisser la tension et protège le cœur", dose: "½ comprimé", moment: "Avant de manger", alert: false },
+  { id: 3, name: "Amiodarone 200mg", role: "Régule le rythme du cœur — évite les palpitations", dose: "1 comprimé", moment: "Pendant le repas", alert: false },
+  { id: 4, name: "Furosémide 40mg", role: "Élimine l'eau en trop dans le corps", dose: "1 comprimé", moment: "Pendant le repas", alert: false },
+  { id: 5, name: "Diffu-K 600mg", role: "Remplace le potassium perdu — indispensable", dose: "1 gélule", moment: "Ne jamais sauter", alert: true },
+  { id: 6, name: "Aldactone 25mg", role: "Diurétique doux qui protège aussi le cœur", dose: "1 comprimé", moment: "1ère prise du jour", alert: false },
+  { id: 7, name: "Eliquis 2,5mg", role: "Fluidifie le sang pour éviter les caillots", dose: "1 comprimé", moment: "1ère prise du jour", alert: false },
+  { id: 8, name: "Orocal Vitamine D3", role: "Renforce les os et apporte du calcium", dose: "1 comprimé à croquer", moment: "", alert: false },
+  { id: 9, name: "Forxiga 10mg", role: "Aide à contrôler le diabète", dose: "1 comprimé", moment: "Avec ½ verre d'eau", alert: false },
+];
+const MEDS_SOIR_DEFAULT = [
+  { id: 10, name: "Eliquis 2,5mg", role: "Fluidifie le sang — 2ème prise", dose: "1 comprimé", moment: "", alert: false },
+  { id: 11, name: "Aldactone 25mg", role: "Diurétique doux — 2ème prise", dose: "1 comprimé", moment: "", alert: false },
+];
+const MEDS_MENSUEL_DEFAULT = [
+  { id: 12, name: "Uvedose 50 000 UI", role: "Vitamine D mensuelle pour les os et l'immunité", dose: "1 ampoule", moment: "Pure ou diluée dans un verre d'eau", alert: false, datePrise: "" },
+];
+
+const NUTRITION = {
+  coeur: {
+    label: "Cœur & Tension", emoji: "❤️",
+    ok: ["Poisson gras (saumon, maquereau, sardines)", "Légumes verts frais", "Fruits frais", "Huile d'olive", "Légumineuses", "Noix et amandes"],
+    limiter: ["Viande rouge (1 fois/semaine)", "Fromage (petites portions)", "Pain blanc"],
+    eviter: ["Sel ajouté — réduire au maximum", "Charcuteries", "Plats industriels", "Alcool"],
+  },
+  diabete: {
+    label: "Diabète", emoji: "🩸",
+    ok: ["Légumes non féculents", "Protéines maigres", "Céréales complètes", "Baies, pomme, poire", "Eau, tisanes"],
+    limiter: ["Riz et pâtes (petites portions)", "Pain complet", "Banane, raisin"],
+    eviter: ["Sucre ajouté", "Sodas et jus de fruits", "Viennoiseries", "Desserts sucrés"],
+  },
+  anticoag: {
+    label: "Anticoagulants", emoji: "💊",
+    ok: ["Viandes, poissons, œufs", "Produits laitiers", "Légumes en quantité stable"],
+    limiter: ["Choux, épinards — quantité constante", "Ail, gingembre en excès"],
+    eviter: ["Pamplemousse", "Millepertuis", "Alcool"],
+  },
+};
+
+const TABS = [
+  { id: "accueil", label: "Accueil" },
+  { id: "presence", label: "Présence" },
+  { id: "medicaments", label: "Médicaments" },
+  { id: "carnet", label: "Carnet" },
+  { id: "nutrition", label: "Nutrition" },
+];
+
+const Icon = ({ name, size = 22, color = G4, strokeWidth = 1.7 }) => {
+  const s = { width: size, height: size, flexShrink: 0 };
+  const p = { fill: "none", stroke: color, strokeWidth, strokeLinecap: "round", strokeLinejoin: "round" };
+  if (name === "home") return <svg style={s} viewBox="0 0 24 24" {...p}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
+  if (name === "person") return <svg style={s} viewBox="0 0 24 24" {...p}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6"/></svg>;
+  if (name === "pill") return <svg style={s} viewBox="0 0 24 24" {...p}><rect x="3" y="3" width="8" height="18" rx="4"/><rect x="13" y="3" width="8" height="18" rx="4"/><line x1="3" y1="12" x2="11" y2="12"/><line x1="13" y1="12" x2="21" y2="12"/></svg>;
+  if (name === "book") return <svg style={s} viewBox="0 0 24 24" {...p}><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>;
+  if (name === "leaf") return <svg style={s} viewBox="0 0 24 24" {...p}><path d="M21 3C21 3 15 3 9 9c-4 4-5 9-5 9s5-1 9-5c6-6 8-10 8-10z"/><path d="M3 21l5-5"/></svg>;
+  if (name === "clock") return <svg style={s} viewBox="0 0 24 24" {...p}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>;
+  if (name === "logout") return <svg style={s} viewBox="0 0 24 24" {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+  if (name === "edit") return <svg style={s} viewBox="0 0 24 24" {...p}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>;
+  if (name === "trash") return <svg style={s} viewBox="0 0 24 24" {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>;
+  if (name === "check") return <svg style={s} viewBox="0 0 24 24" {...p}><polyline points="20 6 9 17 4 12"/></svg>;
+  return null;
+};
+
+const getDayOfYear = () => { const n = new Date(); return Math.floor((n - new Date(n.getFullYear(), 0, 0)) / 86400000); };
+const fmtH = (ts) => ts ? new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
+const fmtD = (ts) => ts ? new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "";
+const loadL = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
+const saveL = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+const SectionLabel = ({ children }) => (
+  <div style={{ fontSize: 11, fontWeight: 700, color: G3, letterSpacing: "0.9px", textTransform: "uppercase", marginBottom: 10 }}>{children}</div>
+);
+
+const Card = ({ children, style, onClick }) => (
+  <div onClick={onClick} style={{ background: W, borderRadius: 16, padding: "16px 18px", marginBottom: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)", cursor: onClick ? "pointer" : "default", ...style }}>
+    {children}
+  </div>
+);
+
+export default function RosaCare() {
+  const [tab, setTab] = useState("accueil");
+  const todayStr = new Date().toDateString();
+  const freshDay = loadL("rc_date", null) !== todayStr;
+
+  const [medsMatin, setMedsMatin] = useState(() =>
+    freshDay ? MEDS_MATIN_DEFAULT.map(m => ({ ...m, checked: false })) : loadL("rc_mm", MEDS_MATIN_DEFAULT.map(m => ({ ...m, checked: false })))
+  );
+  const [medsSoir, setMedsSoir] = useState(() =>
+    freshDay ? MEDS_SOIR_DEFAULT.map(m => ({ ...m, checked: false })) : loadL("rc_ms", MEDS_SOIR_DEFAULT.map(m => ({ ...m, checked: false })))
+  );
+  const [medsMensuel, setMedsMensuel] = useState(() =>
+    loadL("rc_men", MEDS_MENSUEL_DEFAULT.map(m => ({ ...m, checked: false })))
+  );
+  const [moment, setMoment] = useState("matin");
+  const [showInter, setShowInter] = useState(false);
+  const [showAddMed, setShowAddMed] = useState(false);
+  const [editingMed, setEditingMed] = useState(null);
+  const [nutr, setNutr] = useState("coeur");
+  const [notes, setNotes] = useState([]);
+  const [showNote, setShowNote] = useState(false);
+  const [noteCat, setNoteCat] = useState("Observations");
+  const [photo, setPhoto] = useState(null);
+  const [presences, setPresences] = useState([]);
+  const [loadingP, setLoadingP] = useState(false);
+
+  const newMed = useRef({ name: "", role: "", dose: "", moment: "" });
+  const noteRef = useRef(null);
+  const photoRef = useRef(null);
+
+  useEffect(() => {
+    saveL("rc_mm", medsMatin); saveL("rc_ms", medsSoir); saveL("rc_men", medsMensuel); saveL("rc_date", todayStr);
+  }, [medsMatin, medsSoir, medsMensuel]);
+
+  useEffect(() => {
+    fetchPresences();
+    fetchNotes();
+
+    const channel = supabase
+      .channel("rosacare-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "presences" }, () => fetchPresences())
+      .on("postgres_changes", { event: "*", schema: "public", table: "carnet" }, () => fetchNotes())
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
+
+  const fetchPresences = async () => { const { data } = await supabase.from("presences").select("*").order("heure", { ascending: false }).limit(20); if (data) setPresences(data); };
+  const fetchNotes = async () => { const { data } = await supabase.from("carnet").select("*").order("created_at", { ascending: false }); if (data) setNotes(data); };
+  const logP = async (action, who) => { setLoadingP(true); await supabase.from("presences").insert([{ action, saisie_par: who }]); await fetchPresences(); setLoadingP(false); };
+  const lastP = (who, action) => presences.find(p => p.saisie_par === who && p.action === action);
+  const statut = (who) => presences.find(p => p.saisie_par === who)?.action || null;
+  const toggleMed = (list, set, id) => set(list.map(m => m.id === id ? { ...m, checked: !m.checked } : m));
+  const delMed = (mo, id) => { if (mo === "matin") setMedsMatin(x => x.filter(m => m.id !== id)); else if (mo === "soir") setMedsSoir(x => x.filter(m => m.id !== id)); else setMedsMensuel(x => x.filter(m => m.id !== id)); };
+  const saveMedEdit = (mo, id, fields) => { if (mo === "matin") setMedsMatin(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); else if (mo === "soir") setMedsSoir(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); else setMedsMensuel(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); setEditingMed(null); };
+  const addMed = () => { const name = newMed.current.name?.trim(); if (!name) return; const entry = { id: Date.now(), name, role: newMed.current.role?.trim() || "", dose: newMed.current.dose?.trim() || "", moment: newMed.current.moment?.trim() || "", alert: false, checked: false }; if (moment === "matin") setMedsMatin(x => [...x, entry]); else if (moment === "soir") setMedsSoir(x => [...x, entry]); else setMedsMensuel(x => [...x, { ...entry, datePrise: "" }]); newMed.current = { name: "", role: "", dose: "", moment: "" }; setShowAddMed(false); };
+  const updDate = (id, date) => setMedsMensuel(x => x.map(m => m.id === id ? { ...m, datePrise: date } : m));
+  const addNote = async () => { const text = noteRef.current?.value?.trim(); if (!text) return; await supabase.from("carnet").insert([{ categorie: noteCat, texte: text, auteur: "Famille" }]); if (noteRef.current) noteRef.current.value = ""; setShowNote(false); await fetchNotes(); };
+  const getMedList = () => moment === "matin" ? [medsMatin, setMedsMatin] : moment === "soir" ? [medsSoir, setMedsSoir] : [medsMensuel, setMedsMensuel];
+
+  const phrase = PHRASES[getDayOfYear() % PHRASES.length];
+  const checkedM = medsMatin.filter(m => m.checked).length;
+  const checkedS = medsSoir.filter(m => m.checked).length;
+  const totalM = medsMatin.length;
+  const totalS = medsSoir.length;
+
+  const Avatar = ({ nom, size = 38 }) => {
+    const st = statut(nom);
+    const bg = st === "arrivee" ? GR : st === "depart" ? OR : G4;
+    return <div style={{ width: size, height: size, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.38, fontWeight: 700, color: W, flexShrink: 0 }}>{nom[0]}</div>;
+  };
+
+  const EditModal = ({ med, mo }) => {
+    const [f, setF] = useState({ name: med.name, role: med.role, dose: med.dose, moment: med.moment || "" });
+    const inp = (label, key) => (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: G3, letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+        <input value={f[key]} onChange={e => setF(p => ({ ...p, [key]: e.target.value }))}
+          style={{ width: "100%", border: `1.5px solid ${G5}`, background: BG, borderRadius: 10, padding: "11px 13px", fontSize: 15, color: G1, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+      </div>
+    );
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 999 }}>
+        <div style={{ background: W, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: 390 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: G1, marginBottom: 18 }}>Modifier le médicament</div>
+          {inp("Nom", "name")}{inp("À quoi il sert", "role")}{inp("Dose", "dose")}{inp("Moment de prise", "moment")}
+          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+            <button onClick={() => setEditingMed(null)} style={{ flex: 1, padding: 13, background: G5, color: G2, border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+            <button onClick={() => saveMedEdit(mo, med.id, f)} style={{ flex: 2, padding: 13, background: B, color: W, border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── ACCUEIL ──────────────────────────────────────────────
+  const Accueil = () => (
+    <div style={{ paddingBottom: 28, overflowX: "hidden" }}>
+     
+      <div style={{ padding: "20px 16px 0" }}>
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Tableau de bord</div>
+          <div style={{ fontSize: 14, color: G3, marginTop: 3 }}>
+            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+          </div>
+        </div>
+
+        <SectionLabel>Présence</SectionLabel>
+        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          {["Rosa", "Lila"].map(nom => {
+            const st = statut(nom);
+            const present = st === "arrivee";
+            const arr = lastP(nom, "arrivee");
+            const dep = lastP(nom, "depart");
+            return (
+              <div key={nom} style={{ flex: 1, background: W, borderRadius: 16, padding: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+                  <Avatar nom={nom} size={36} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: G1 }}>{nom}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: present ? GR : st === "depart" ? OR : G4, marginTop: 1 }}>
+                      {present ? "● Présente" : st === "depart" ? "○ Absente" : "—"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                  <Icon name="clock" size={12} color={G3} />
+                  <span style={{ fontSize: 12, color: G3 }}>Arrivée</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: G1, marginLeft: "auto" }}>{fmtH(arr?.heure)}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Icon name="logout" size={12} color={G3} />
+                  <span style={{ fontSize: 12, color: G3 }}>Départ</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: G1, marginLeft: "auto" }}>{fmtH(dep?.heure)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <SectionLabel>Médicaments du jour</SectionLabel>
+        <Card onClick={() => setTab("medicaments")} style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: G1, letterSpacing: "-0.3px" }}>
+                {checkedM + checkedS} sur {totalM + totalS} pris
+              </div>
+              <div style={{ fontSize: 13, color: G3, marginTop: 2 }}>
+                {totalM + totalS - checkedM - checkedS > 0
+                  ? `${totalM + totalS - checkedM - checkedS} restant${totalM + totalS - checkedM - checkedS > 1 ? "s" : ""}`
+                  : "✓ Tout pris pour aujourd'hui"}
+              </div>
+            </div>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: BL, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="pill" size={20} color={B} />
+            </div>
+          </div>
+          <div style={{ height: 4, background: G5, borderRadius: 2, overflow: "hidden", marginBottom: 12 }}>
+            <div style={{ height: "100%", background: checkedM + checkedS === totalM + totalS && totalM + totalS > 0 ? GR : B, width: `${totalM + totalS ? Math.round((checkedM + checkedS) / (totalM + totalS) * 100) : 0}%`, borderRadius: 2, transition: "width 0.4s" }} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {[{ label: "Matin", checked: checkedM, total: totalM }, { label: "Soir", checked: checkedS, total: totalS }].map(({ label, checked, total }) => (
+              <div key={label} style={{ flex: 1, background: BG, borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: G3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: checked === total && total > 0 ? GR : G1 }}>{checked}/{total}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: B }}>Voir les médicaments →</div>
+        </Card>
+
+        <SectionLabel>Citation du jour</SectionLabel>
+        <Card style={{ textAlign: "center", padding: "20px 18px", marginBottom: 18 }}>
+         <div style={{ fontSize: 32, color: G3, opacity: 0.25, lineHeight: 0.7, marginBottom: 12, fontFamily: "Georgia, serif" }}>"</div>
+          <div style={{ fontSize: 15, color: G2, lineHeight: 1.7, fontStyle: "italic" }}>"{phrase.t}"</div>
+          {phrase.a && <div style={{ fontSize: 12, color: G3, marginTop: 10, fontWeight: 600 }}>— {phrase.a}</div>}
+        </Card>
+
+        <SectionLabel>Souvenir du jour</SectionLabel>
+        <div style={{ background: W, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)", marginBottom: 0 }}>
+          <div style={{ width: "100%", height: 200, background: BG, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {photo
+              ? <img src={photo} alt="souvenir" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <div style={{ textAlign: "center" }}><div style={{ fontSize: 32, marginBottom: 8 }}>🌸</div><div style={{ fontSize: 13, color: G3 }}>Ajoutez une photo souvenir</div></div>}
+          </div>
+          <div style={{ padding: "14px 16px" }}>
+            {photo && <div style={{ fontSize: 12, color: G3, marginBottom: 8 }}>{fmtD(new Date())}</div>}
+            <button onClick={() => photoRef.current?.click()} style={{ width: "100%", background: B, color: W, border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+              + Ajouter un souvenir
+            </button>
+          </div>
+        </div>
+        <input ref={photoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) setPhoto(URL.createObjectURL(f)); }} />
+      </div>
+      <div style={{ height: 28 }} />
+    </div>
+  );
+
+  // ── PRÉSENCE ─────────────────────────────────────────────
+  const Presence = () => (
+    <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px", marginBottom: 3 }}>Présence</div>
+      <div style={{ fontSize: 13, color: G3, marginBottom: 20 }}>Informez la famille en temps réel</div>
+      {["Rosa", "Lila"].map(nom => {
+        const st = statut(nom);
+        const present = st === "arrivee";
+        const arr = lastP(nom, "arrivee");
+        const dep = lastP(nom, "depart");
+        return (
+          <Card key={nom}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <Avatar nom={nom} size={46} />
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: G1 }}>{nom}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: present ? GR : st === "depart" ? OR : G4, marginTop: 2 }}>
+                  {present ? "● Présente" : st === "depart" ? "○ Absente" : "Aucune information"}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+              {[{ label: "Arrivée", val: fmtH(arr?.heure), date: arr ? fmtD(arr.heure) : null },
+                { label: "Départ", val: fmtH(dep?.heure), date: dep ? fmtD(dep.heure) : null }].map(({ label, val, date }) => (
+                <div key={label} style={{ flex: 1, background: BG, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: G3, letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: G1 }}>{val}</div>
+                  {date && <div style={{ fontSize: 11, color: G3, marginTop: 2 }}>{date}</div>}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => logP("arrivee", nom)} disabled={loadingP} style={{ flex: 1, background: GR, color: W, border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>🏠 J'arrive</button>
+              <button onClick={() => logP("depart", nom)} disabled={loadingP} style={{ flex: 1, background: OR, color: W, border: "none", borderRadius: 12, padding: "13px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>🚶 Je pars</button>
+            </div>
+          </Card>
+        );
+      })}
+      <SectionLabel>Historique</SectionLabel>
+      {presences.length === 0
+        ? <Card style={{ textAlign: "center", color: G3, padding: 24 }}>Aucune présence enregistrée</Card>
+        : presences.slice(0, 10).map(p => (
+          <Card key={p.id} style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: p.action === "arrivee" ? "#EDFAF1" : "#FFF4E6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+              {p.action === "arrivee" ? "🏠" : "🚶"}
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: G1 }}>{p.saisie_par} · {p.action === "arrivee" ? "Arrivée" : "Départ"}</div>
+              <div style={{ fontSize: 12, color: G3, marginTop: 2 }}>{fmtD(p.heure)} à {fmtH(p.heure)}</div>
+            </div>
+          </Card>
+        ))}
+      <div style={{ height: 20 }} />
+    </div>
+  );
+
+  // ── MÉDICAMENTS ──────────────────────────────────────────
+  const Medicaments = () => {
+    const [list, setList] = getMedList();
+    const checked = list.filter(m => m.checked).length;
+    return (
+      <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
+        {editingMed && <EditModal med={editingMed.med} mo={editingMed.mo} />}
+        <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px", marginBottom: 3 }}>Médicaments</div>
+        <div style={{ fontSize: 13, color: G3, marginBottom: 18 }}>Ce que chaque comprimé fait pour vous</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+          {["matin", "soir", "mensuel"].map(m => (
+            <button key={m} onClick={() => setMoment(m)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, background: moment === m ? B : G5, color: moment === m ? W : G2, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {m === "matin" ? "☀️ Matin" : m === "soir" ? "🌙 Soir" : "📅 Mensuel"}
+            </button>
+          ))}
+        </div>
+        {moment === "matin" && (
+          <div style={{ background: "#FFFBEE", borderRadius: 12, padding: "11px 14px", marginBottom: 14, border: "1px solid #FFE5A0", display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <Icon name="clock" size={14} color="#7A5400" />
+            <div style={{ fontSize: 12, color: "#7A5400", fontWeight: 600, lineHeight: 1.5 }}>Commencer par le Pantoprazole 1h avant les autres médicaments, à jeun strict.</div>
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+          {list.map(med => (
+            <div key={med.id} style={{ background: W, borderRadius: 14, padding: "14px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)", display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div onClick={() => toggleMed(list, setList, med.id)} style={{ flex: 1, cursor: "pointer" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: med.checked ? G4 : G1, textDecoration: med.checked ? "line-through" : "none", marginBottom: 3 }}>{med.name}</div>
+                <div style={{ fontSize: 12, color: med.alert ? OR : G3, marginBottom: 5, lineHeight: 1.4 }}>{med.role}</div>
+                {med.dose && (
+                  <div style={{ display: "inline-flex", alignItems: "center", background: BG, borderRadius: 6, padding: "3px 9px" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: B }}>{med.dose}</span>
+                    {med.moment ? <span style={{ fontSize: 12, color: G3, marginLeft: 5 }}>· {med.moment}</span> : null}
+                  </div>
+                )}
+                {moment === "mensuel" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8 }}>
+                    <span style={{ fontSize: 11, color: G3, fontWeight: 600 }}>Dernière prise :</span>
+                    <input type="date" value={med.datePrise || ""} onChange={e => updDate(med.id, e.target.value)} style={{ fontSize: 12, border: `1px solid ${G5}`, borderRadius: 7, padding: "3px 8px", color: G1, background: BG, outline: "none", fontFamily: "inherit" }} />
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center", paddingTop: 1 }}>
+                <div onClick={() => toggleMed(list, setList, med.id)} style={{ width: 26, height: 26, borderRadius: 7, background: med.checked ? B : W, border: `2px solid ${med.checked ? B : med.alert ? OR : G5}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                  {med.checked && <Icon name="check" size={13} color={W} strokeWidth={2.5} />}
+                </div>
+                <button onClick={() => setEditingMed({ med, mo: moment })} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                  <Icon name="edit" size={15} color={G3} />
+                </button>
+                <button onClick={() => delMed(moment, med.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                  <Icon name="trash" size={15} color={G4} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button onClick={() => { const [l, s] = getMedList(); s(l.map(m => ({ ...m, checked: true }))); }} style={{ flex: 1, background: GR, color: W, border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Valider {moment}</button>
+          <button onClick={() => setShowAddMed(v => !v)} style={{ flex: 1, background: BL, color: B, border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Ajouter</button>
+        </div>
+        {showAddMed && (
+          <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: G1, marginBottom: 12 }}>Nouveau médicament</div>
+            {[{ ph: "Nom *", key: "name" }, { ph: "À quoi il sert", key: "role" }, { ph: "Dose (ex: 1 comprimé)", key: "dose" }, { ph: "Moment (ex: pendant le repas)", key: "moment" }].map(({ ph, key }) => (
+              <input key={key} placeholder={ph} onChange={e => { newMed.current[key] = e.target.value; }} style={{ width: "100%", border: `1px solid ${G5}`, background: W, borderRadius: 10, padding: "11px 13px", fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+            ))}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowAddMed(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+              <button onClick={addMed} style={{ flex: 2, padding: 11, background: B, color: W, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
+            </div>
+          </div>
+        )}
+        <button onClick={() => setShowInter(v => !v)} style={{ width: "100%", background: "#FFFBEE", color: "#7A5400", border: "1px solid #FFE5A0", borderRadius: 12, padding: "12px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", textAlign: "left", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+          <span>⚠️ Interactions importantes</span><span>{showInter ? "▲" : "▼"}</span>
+        </button>
+        {showInter && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+            {[
+              { titre: "Amiodarone + Eliquis", texte: "L'Amiodarone amplifie l'effet de l'Eliquis. Surveiller : saignements des gencives, urines foncées, bleus inhabituels." },
+              { titre: "Furosémide + Diffu-K", texte: "Le Diffu-K est indispensable à chaque prise de Furosémide. Ne jamais l'oublier." },
+              { titre: "Forxiga + Furosémide", texte: "Double effet diurétique. Bien s'hydrater, surtout par temps chaud." },
+              { titre: "Cosimprel + Furosémide", texte: "Peut faire baisser la tension. Se lever doucement pour éviter les vertiges." },
+            ].map((inter, i) => (
+              <div key={i} style={{ background: "#FFFBEE", borderRadius: 12, padding: "12px 14px", border: "1px solid #FFE5A0" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#7A5400", marginBottom: 4 }}>{inter.titre}</div>
+                <div style={{ fontSize: 12, color: "#7A5400", lineHeight: 1.5, opacity: 0.85 }}>{inter.texte}</div>
+              </div>
+            ))}
+            <div style={{ background: BL, borderRadius: 12, padding: "12px 14px", border: `1px solid ${B}22` }}>
+              <div style={{ fontSize: 12, color: B, fontWeight: 600, lineHeight: 1.5 }}>ℹ️ En cas de doute, consultez votre médecin ou votre pharmacien avant tout changement de traitement.</div>
+            </div>
+          </div>
+        )}
+        <div style={{ height: 20 }} />
+      </div>
+    );
+  };
+
+  // ── CARNET ───────────────────────────────────────────────
+  const Carnet = () => (
+    <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Mon carnet</div>
+          <div style={{ fontSize: 13, color: G3, marginTop: 2 }}>Notes et rendez-vous</div>
+        </div>
+        <button onClick={() => setShowNote(v => !v)} style={{ width: 42, height: 42, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(26,107,138,0.28)", flexShrink: 0 }}>+</button>
+      </div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+        {["Observations", "Rendez-vous"].map(cat => (
+          <button key={cat} onClick={() => setNoteCat(cat)} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, background: noteCat === cat ? B : G5, color: noteCat === cat ? W : G2, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{cat}</button>
+        ))}
+      </div>
+      {showNote && (
+        <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <textarea ref={noteRef} placeholder="Écrivez votre note ici..." style={{ width: "100%", minHeight: 90, border: `1px solid ${G5}`, background: W, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", lineHeight: 1.6 }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => setShowNote(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+            <button onClick={addNote} style={{ flex: 2, padding: 11, background: B, color: W, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
+          </div>
+        </div>
+      )}
+      {["Observations", "Rendez-vous"].map(cat => (
+        <div key={cat} style={{ marginBottom: 22 }}>
+          <SectionLabel>{cat}</SectionLabel>
+          {notes.filter(n => n.categorie === cat).length === 0 ? (
+            <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.18 }}>{cat === "Observations" ? "📋" : "📅"}</div>
+              <div style={{ fontSize: 13, color: G4, fontWeight: 500 }}>Aucune note enregistrée</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {notes.filter(n => n.categorie === cat).map((note, i) => (
+                <Card key={note.id || i} style={{ marginBottom: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: B, marginBottom: 6 }}>{fmtD(note.created_at)}</div>
+                  <div style={{ fontSize: 14, color: G2, lineHeight: 1.6 }}>{note.texte}</div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      <div style={{ height: 20 }} />
+    </div>
+  );
+
+  // ── NUTRITION ────────────────────────────────────────────
+  const Nutrition = () => {
+    const cat = NUTRITION[nutr];
+    return (
+      <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px", marginBottom: 3 }}>Nutrition</div>
+        <div style={{ fontSize: 13, color: G3, marginBottom: 18 }}>Conseils adaptés à votre profil</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+          {Object.entries(NUTRITION).map(([key, val]) => (
+            <button key={key} onClick={() => setNutr(key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, background: nutr === key ? B : G5, color: nutr === key ? W : G2, border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", lineHeight: 1.5 }}>
+              {val.emoji}<br />{val.label}
+            </button>
+          ))}
+        </div>
+        {[{ color: GR, label: "Recommandé", items: cat.ok }, { color: OR, label: "Avec modération", items: cat.limiter }, { color: RE, label: "À éviter", items: cat.eviter }].map(section => (
+          <Card key={section.label}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: section.color }} />
+              <div style={{ fontSize: 11, fontWeight: 700, color: section.color, textTransform: "uppercase", letterSpacing: "0.5px" }}>{section.label}</div>
+            </div>
+            {section.items.map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 0", borderBottom: i < section.items.length - 1 ? `1px solid ${G5}` : "none" }}>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: G4, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: G2 }}>{item}</span>
+              </div>
+            ))}
+          </Card>
+        ))}
+        <div style={{ fontSize: 15, fontWeight: 700, color: G1, marginBottom: 12 }}>Activité physique</div>
+        {[
+          { emoji: "🚶", titre: "Marche quotidienne", texte: "15 à 30 minutes selon l'état de forme." },
+          { emoji: "⚖️", titre: "Équilibre", texte: "Exercices doux debout, appui sur une chaise si besoin." },
+          { emoji: "🤸", titre: "Étirements légers", texte: "Matin ou soir, quelques minutes suffisent." },
+          { emoji: "💧", titre: "Hydratation", texte: "Boire régulièrement, surtout avec les diurétiques." },
+          { emoji: "😴", titre: "Repos", texte: "Respecter les signaux de fatigue. Une sieste courte est bénéfique." },
+        ].map((a, i) => (
+          <Card key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 16px", marginBottom: 8 }}>
+            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>{a.emoji}</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: G1, marginBottom: 2 }}>{a.titre}</div>
+              <div style={{ fontSize: 12, color: G3, lineHeight: 1.5 }}>{a.texte}</div>
+            </div>
+          </Card>
+        ))}
+        <div style={{ height: 20 }} />
+      </div>
+    );
+  };
+
+  const screens = { accueil: Accueil, presence: Presence, medicaments: Medicaments, carnet: Carnet, nutrition: Nutrition };
+  const Screen = screens[tab];
+  const tabIcons = { accueil: "home", presence: "person", medicaments: "pill", carnet: "book", nutrition: "leaf" };
+
+  return (
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif", background: "#C8C8CE", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px 0" }}>
+      <div style={{ width: 390, height: 844, background: BG, borderRadius: 54, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 60px 140px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.2)", flexShrink: 0 }}>
+        <div style={{ background: W, padding: "16px 28px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: G1 }}>9:41</span>
+          <span style={{ fontSize: 13, color: G1 }}>●●● ▮</span>
+        </div>
+        <div style={{ background: W, padding: "10px 20px 12px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
+          <img src="/rosacare-logo.png" alt="RosaCare"
+            style={{ height: 52, maxWidth: "75%", objectFit: "contain", display: "block" }}
+            onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "block"; }} />
+          <div style={{ display: "none", fontSize: 22, fontWeight: 800, color: B, letterSpacing: "-0.8px" }}>Rosa<span style={{ fontWeight: 300, color: G3 }}>Care</span></div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
+          <Screen />
+        </div>
+        <div style={{ background: W, display: "flex", padding: "10px 4px 26px", borderTop: `1px solid ${G5}`, flexShrink: 0 }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, border: "none", background: "none", cursor: "pointer", padding: "4px 2px" }}>
+              <Icon name={tabIcons[t.id]} size={22} color={tab === t.id ? B : G4} strokeWidth={tab === t.id ? 2 : 1.6} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: tab === t.id ? B : G4 }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
