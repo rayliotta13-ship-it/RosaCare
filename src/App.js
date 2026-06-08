@@ -814,7 +814,7 @@ export default function RosaCare() {
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif", background: "#C8C8CE", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px 0" }}>
       <div style={{ width: 390, height: 844, background: BG, borderRadius: 54, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 60px 140px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.2)", flexShrink: 0 }}>
 
-        <div style={{ background: W, padding: "10px 20px 12px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ background: W, padding: "16px 20px 16px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
           <img src="/rosacare-logo.png" alt="RosaCare" style={{ height: 62, maxWidth: "80%", objectFit: "contain", display: "block" }}
             onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "block"; }} />
           <div style={{ display: "none", fontSize: 22, fontWeight: 800, color: B, letterSpacing: "-0.8px" }}>Rosa<span style={{ fontWeight: 300, color: G3 }}>Care</span></div>
@@ -822,7 +822,7 @@ export default function RosaCare() {
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
           <Screen />
         </div>
-        <div style={{ background: W, display: "flex", padding: "10px 4px 26px", borderTop: `1px solid ${G5}`, flexShrink: 0 }}>
+        <div style={{ background: W, display: "flex", padding: "12px 4px 30px", borderTop: `1px solid ${G5}`, flexShrink: 0, minHeight: 70 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, border: "none", background: "none", cursor: "pointer", padding: "4px 2px" }}>
               <Icon name={tabIcons[t.id]} size={22} color={tab === t.id ? B : G4} strokeWidth={tab === t.id ? 2 : 1.6} />
