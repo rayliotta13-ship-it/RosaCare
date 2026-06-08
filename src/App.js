@@ -48,22 +48,22 @@ const PHRASES = [
 ];
 
 const MEDS_MATIN_DEFAULT = [
-  { id: 1, name: "Pantoprazole 20mg", role: "Protège l'estomac des autres médicaments", dose: "1 comprimé entier", moment: "À jeun strict · 1h avant les autres", alert: true },
-  { id: 2, name: "Cosimprel 5mg/5mg", role: "Fait baisser la tension et protège le cœur", dose: "½ comprimé", moment: "Avant de manger", alert: false },
-  { id: 3, name: "Amiodarone 200mg", role: "Régule le rythme du cœur — évite les palpitations", dose: "1 comprimé", moment: "Pendant le repas", alert: false },
-  { id: 4, name: "Furosémide 40mg", role: "Élimine l'eau en trop dans le corps", dose: "1 comprimé", moment: "Pendant le repas", alert: false },
-  { id: 5, name: "Diffu-K 600mg", role: "Remplace le potassium perdu — indispensable", dose: "1 gélule", moment: "Ne jamais sauter", alert: true },
-  { id: 6, name: "Aldactone 25mg", role: "Diurétique doux qui protège aussi le cœur", dose: "1 comprimé", moment: "1ère prise du jour", alert: false },
-  { id: 7, name: "Eliquis 2,5mg", role: "Fluidifie le sang pour éviter les caillots", dose: "1 comprimé", moment: "1ère prise du jour", alert: false },
-  { id: 8, name: "Orocal Vitamine D3", role: "Renforce les os et apporte du calcium", dose: "1 comprimé à croquer", moment: "", alert: false },
-  { id: 9, name: "Forxiga 10mg", role: "Aide à contrôler le diabète", dose: "1 comprimé", moment: "Avec ½ verre d'eau", alert: false },
+  { id: 1, name: "Pantoprazole 20mg", role: "Protège l'estomac des autres médicaments", dose: "1 comprimé entier", moment_prise: "À jeun strict · 1h avant les autres", alert: true },
+  { id: 2, name: "Cosimprel 5mg/5mg", role: "Fait baisser la tension et protège le cœur", dose: "½ comprimé", moment_prise: "Avant de manger", alert: false },
+  { id: 3, name: "Amiodarone 200mg", role: "Régule le rythme du cœur — évite les palpitations", dose: "1 comprimé", moment_prise: "Pendant le repas", alert: false },
+  { id: 4, name: "Furosémide 40mg", role: "Élimine l'eau en trop dans le corps", dose: "1 comprimé", moment_prise: "Pendant le repas", alert: false },
+  { id: 5, name: "Diffu-K 600mg", role: "Remplace le potassium perdu — indispensable", dose: "1 gélule", moment_prise: "Ne jamais sauter", alert: true },
+  { id: 6, name: "Aldactone 25mg", role: "Diurétique doux qui protège aussi le cœur", dose: "1 comprimé", moment_prise: "1ère prise du jour", alert: false },
+  { id: 7, name: "Eliquis 2,5mg", role: "Fluidifie le sang pour éviter les caillots", dose: "1 comprimé", moment_prise: "1ère prise du jour", alert: false },
+  { id: 8, name: "Orocal Vitamine D3", role: "Renforce les os et apporte du calcium", dose: "1 comprimé à croquer", moment_prise: "", alert: false },
+  { id: 9, name: "Forxiga 10mg", role: "Aide à contrôler le diabète", dose: "1 comprimé", moment_prise: "Avec ½ verre d'eau", alert: false },
 ];
 const MEDS_SOIR_DEFAULT = [
-  { id: 10, name: "Eliquis 2,5mg", role: "Fluidifie le sang — 2ème prise", dose: "1 comprimé", moment: "", alert: false },
-  { id: 11, name: "Aldactone 25mg", role: "Diurétique doux — 2ème prise", dose: "1 comprimé", moment: "", alert: false },
+  { id: 10, name: "Eliquis 2,5mg", role: "Fluidifie le sang — 2ème prise", dose: "1 comprimé", moment_prise: "", alert: false },
+  { id: 11, name: "Aldactone 25mg", role: "Diurétique doux — 2ème prise", dose: "1 comprimé", moment_prise: "", alert: false },
 ];
 const MEDS_MENSUEL_DEFAULT = [
-  { id: 12, name: "Uvedose 50 000 UI", role: "Vitamine D mensuelle pour les os et l'immunité", dose: "1 ampoule", moment: "Pure ou diluée dans un verre d'eau", alert: false, datePrise: "" },
+  { id: 12, name: "Uvedose 50 000 UI", role: "Vitamine D mensuelle pour les os et l'immunité", dose: "1 ampoule", moment_prise: "Pure ou diluée dans un verre d'eau", alert: false, date_prise: "" },
 ];
 
 const NUTRITION = {
@@ -127,20 +127,35 @@ const Card = ({ children, style, onClick }) => (
   </div>
 );
 
+const toRow = (med, moment) => ({
+  id: med.id,
+  moment,
+  name: med.name,
+  role: med.role || "",
+  dose: med.dose || "",
+  moment_prise: med.moment_prise || "",
+  alert: med.alert || false,
+  checked: med.checked || false,
+  date_prise: med.date_prise || "",
+});
+
+const fromRow = (row) => ({
+  id: row.id,
+  name: row.name,
+  role: row.role,
+  dose: row.dose,
+  moment_prise: row.moment_prise,
+  alert: row.alert,
+  checked: row.checked,
+  date_prise: row.date_prise,
+});
+
 export default function RosaCare() {
   const [tab, setTab] = useState("accueil");
-  const todayStr = new Date().toDateString();
-  const freshDay = loadL("rc_date", null) !== todayStr;
-
-  const [medsMatin, setMedsMatin] = useState(() =>
-    freshDay ? MEDS_MATIN_DEFAULT.map(m => ({ ...m, checked: false })) : loadL("rc_mm", MEDS_MATIN_DEFAULT.map(m => ({ ...m, checked: false })))
-  );
-  const [medsSoir, setMedsSoir] = useState(() =>
-    freshDay ? MEDS_SOIR_DEFAULT.map(m => ({ ...m, checked: false })) : loadL("rc_ms", MEDS_SOIR_DEFAULT.map(m => ({ ...m, checked: false })))
-  );
-  const [medsMensuel, setMedsMensuel] = useState(() =>
-    loadL("rc_men", MEDS_MENSUEL_DEFAULT.map(m => ({ ...m, checked: false })))
-  );
+  const [medsMatin, setMedsMatin] = useState([]);
+  const [medsSoir, setMedsSoir] = useState([]);
+  const [medsMensuel, setMedsMensuel] = useState([]);
+  const [medsLoaded, setMedsLoaded] = useState(false);
   const [moment, setMoment] = useState("matin");
   const [showInter, setShowInter] = useState(false);
   const [showAddMed, setShowAddMed] = useState(false);
@@ -148,20 +163,59 @@ export default function RosaCare() {
   const [nutr, setNutr] = useState("coeur");
   const [notes, setNotes] = useState([]);
   const [showNote, setShowNote] = useState(false);
+  const [noteAuteur, setNoteAuteur] = useState("Lila");
   const [noteCat, setNoteCat] = useState("Observations");
   const [photo, setPhoto] = useState(null);
   const [presences, setPresences] = useState([]);
   const [loadingP, setLoadingP] = useState(false);
 
-  const newMed = useRef({ name: "", role: "", dose: "", moment: "" });
+  const newMed = useRef({ name: "", role: "", dose: "", moment_prise: "" });
   const noteRef = useRef(null);
   const photoRef = useRef(null);
 
-  useEffect(() => {
-    saveL("rc_mm", medsMatin); saveL("rc_ms", medsSoir); saveL("rc_men", medsMensuel); saveL("rc_date", todayStr);
-  }, [medsMatin, medsSoir, medsMensuel]);
+  // ── Charger médicaments depuis Supabase ──────────────────
+  const fetchMeds = async () => {
+    const { data } = await supabase.from("medicaments").select("*").order("id");
+    if (data && data.length > 0) {
+      const todayStr = new Date().toDateString();
+      const savedDate = loadL("rc_date", null);
+      const freshDay = savedDate !== todayStr;
+      setMedsMatin(data.filter(r => r.moment === "matin").map(r => ({ ...fromRow(r), checked: freshDay ? false : r.checked })));
+      setMedsSoir(data.filter(r => r.moment === "soir").map(r => ({ ...fromRow(r), checked: freshDay ? false : r.checked })));
+      setMedsMensuel(data.filter(r => r.moment === "mensuel").map(r => fromRow(r)));
+      if (freshDay) saveL("rc_date", todayStr);
+    } else {
+      // Première fois — insérer les médicaments par défaut
+      const allDefault = [
+        ...MEDS_MATIN_DEFAULT.map(m => toRow({ ...m, checked: false }, "matin")),
+        ...MEDS_SOIR_DEFAULT.map(m => toRow({ ...m, checked: false }, "soir")),
+        ...MEDS_MENSUEL_DEFAULT.map(m => toRow({ ...m, checked: false }, "mensuel")),
+      ];
+      await supabase.from("medicaments").insert(allDefault);
+      setMedsMatin(MEDS_MATIN_DEFAULT.map(m => ({ ...m, checked: false })));
+      setMedsSoir(MEDS_SOIR_DEFAULT.map(m => ({ ...m, checked: false })));
+      setMedsMensuel(MEDS_MENSUEL_DEFAULT.map(m => ({ ...m, checked: false })));
+      saveL("rc_date", new Date().toDateString());
+    }
+    setMedsLoaded(true);
+  };
+
+  const updateMedInDB = async (med, mo) => {
+    await supabase.from("medicaments").upsert(toRow(med, mo));
+  };
+
+  const fetchPresences = async () => {
+    const { data } = await supabase.from("presences").select("*").order("heure", { ascending: false }).limit(20);
+    if (data) setPresences(data);
+  };
+
+  const fetchNotes = async () => {
+    const { data } = await supabase.from("carnet").select("*").order("created_at", { ascending: false });
+    if (data) setNotes(data);
+  };
 
   useEffect(() => {
+    fetchMeds();
     fetchPresences();
     fetchNotes();
 
@@ -169,23 +223,106 @@ export default function RosaCare() {
       .channel("rosacare-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "presences" }, () => fetchPresences())
       .on("postgres_changes", { event: "*", schema: "public", table: "carnet" }, () => fetchNotes())
+      .on("postgres_changes", { event: "*", schema: "public", table: "medicaments" }, () => fetchMeds())
       .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const fetchPresences = async () => { const { data } = await supabase.from("presences").select("*").order("heure", { ascending: false }).limit(20); if (data) setPresences(data); };
-  const fetchNotes = async () => { const { data } = await supabase.from("carnet").select("*").order("created_at", { ascending: false }); if (data) setNotes(data); };
-  const logP = async (action, who) => { setLoadingP(true); await supabase.from("presences").insert([{ action, saisie_par: who }]); await fetchPresences(); setLoadingP(false); };
+  const logP = async (action, who) => {
+    setLoadingP(true);
+    await supabase.from("presences").insert([{ action, saisie_par: who }]);
+    await fetchPresences();
+    setLoadingP(false);
+  };
+
   const lastP = (who, action) => presences.find(p => p.saisie_par === who && p.action === action);
   const statut = (who) => presences.find(p => p.saisie_par === who)?.action || null;
-  const toggleMed = (list, set, id) => set(list.map(m => m.id === id ? { ...m, checked: !m.checked } : m));
-  const delMed = (mo, id) => { if (mo === "matin") setMedsMatin(x => x.filter(m => m.id !== id)); else if (mo === "soir") setMedsSoir(x => x.filter(m => m.id !== id)); else setMedsMensuel(x => x.filter(m => m.id !== id)); };
-  const saveMedEdit = (mo, id, fields) => { if (mo === "matin") setMedsMatin(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); else if (mo === "soir") setMedsSoir(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); else setMedsMensuel(x => x.map(m => m.id === id ? { ...m, ...fields } : m)); setEditingMed(null); };
-  const addMed = () => { const name = newMed.current.name?.trim(); if (!name) return; const entry = { id: Date.now(), name, role: newMed.current.role?.trim() || "", dose: newMed.current.dose?.trim() || "", moment: newMed.current.moment?.trim() || "", alert: false, checked: false }; if (moment === "matin") setMedsMatin(x => [...x, entry]); else if (moment === "soir") setMedsSoir(x => [...x, entry]); else setMedsMensuel(x => [...x, { ...entry, datePrise: "" }]); newMed.current = { name: "", role: "", dose: "", moment: "" }; setShowAddMed(false); };
-  const updDate = (id, date) => setMedsMensuel(x => x.map(m => m.id === id ? { ...m, datePrise: date } : m));
-  const addNote = async () => { const text = noteRef.current?.value?.trim(); if (!text) return; await supabase.from("carnet").insert([{ categorie: noteCat, texte: text, auteur: "Famille" }]); if (noteRef.current) noteRef.current.value = ""; setShowNote(false); await fetchNotes(); };
-  const getMedList = () => moment === "matin" ? [medsMatin, setMedsMatin] : moment === "soir" ? [medsSoir, setMedsSoir] : [medsMensuel, setMedsMensuel];
+
+  const toggleMed = async (list, setList, id, mo) => {
+    const updated = list.map(m => m.id === id ? { ...m, checked: !m.checked } : m);
+    setList(updated);
+    const med = updated.find(m => m.id === id);
+    await updateMedInDB(med, mo);
+  };
+
+  const delMed = async (mo, id) => {
+    if (mo === "matin") setMedsMatin(x => x.filter(m => m.id !== id));
+    else if (mo === "soir") setMedsSoir(x => x.filter(m => m.id !== id));
+    else setMedsMensuel(x => x.filter(m => m.id !== id));
+    await supabase.from("medicaments").delete().eq("id", id);
+  };
+
+  const saveMedEdit = async (mo, id, fields) => {
+    const update = (list, set) => {
+      const updated = list.map(m => m.id === id ? { ...m, ...fields } : m);
+      set(updated);
+      const med = updated.find(m => m.id === id);
+      updateMedInDB(med, mo);
+    };
+    if (mo === "matin") update(medsMatin, setMedsMatin);
+    else if (mo === "soir") update(medsSoir, setMedsSoir);
+    else update(medsMensuel, setMedsMensuel);
+    setEditingMed(null);
+  };
+
+  const valAll = async (mo) => {
+    if (mo === "matin") {
+      const updated = medsMatin.map(m => ({ ...m, checked: true }));
+      setMedsMatin(updated);
+      for (const m of updated) await updateMedInDB(m, "matin");
+    } else if (mo === "soir") {
+      const updated = medsSoir.map(m => ({ ...m, checked: true }));
+      setMedsSoir(updated);
+      for (const m of updated) await updateMedInDB(m, "soir");
+    } else {
+      const updated = medsMensuel.map(m => ({ ...m, checked: true }));
+      setMedsMensuel(updated);
+      for (const m of updated) await updateMedInDB(m, "mensuel");
+    }
+  };
+
+  const addMed = async () => {
+    const name = newMed.current.name?.trim();
+    if (!name) return;
+    const entry = {
+      id: Date.now(),
+      name,
+      role: newMed.current.role?.trim() || "",
+      dose: newMed.current.dose?.trim() || "",
+      moment_prise: newMed.current.moment_prise?.trim() || "",
+      alert: false,
+      checked: false,
+      date_prise: "",
+    };
+    if (moment === "matin") setMedsMatin(x => [...x, entry]);
+    else if (moment === "soir") setMedsSoir(x => [...x, entry]);
+    else setMedsMensuel(x => [...x, entry]);
+    await supabase.from("medicaments").insert(toRow(entry, moment));
+    newMed.current = { name: "", role: "", dose: "", moment_prise: "" };
+    setShowAddMed(false);
+  };
+
+  const updDate = async (id, date) => {
+    const updated = medsMensuel.map(m => m.id === id ? { ...m, date_prise: date } : m);
+    setMedsMensuel(updated);
+    const med = updated.find(m => m.id === id);
+    await updateMedInDB(med, "mensuel");
+  };
+
+  const addNote = async () => {
+    const text = noteRef.current?.value?.trim();
+    if (!text) return;
+    await supabase.from("carnet").insert([{ categorie: noteCat, texte: text, auteur: noteAuteur }]);
+    if (noteRef.current) noteRef.current.value = "";
+    setShowNote(false);
+    await fetchNotes();
+  };
+
+  const getMedList = () =>
+    moment === "matin" ? [medsMatin, setMedsMatin] :
+    moment === "soir" ? [medsSoir, setMedsSoir] :
+    [medsMensuel, setMedsMensuel];
 
   const phrase = PHRASES[getDayOfYear() % PHRASES.length];
   const checkedM = medsMatin.filter(m => m.checked).length;
@@ -200,7 +337,7 @@ export default function RosaCare() {
   };
 
   const EditModal = ({ med, mo }) => {
-    const [f, setF] = useState({ name: med.name, role: med.role, dose: med.dose, moment: med.moment || "" });
+    const [f, setF] = useState({ name: med.name, role: med.role, dose: med.dose, moment_prise: med.moment_prise || "" });
     const inp = (label, key) => (
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: G3, letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
@@ -212,7 +349,7 @@ export default function RosaCare() {
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 999 }}>
         <div style={{ background: W, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: 390 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: G1, marginBottom: 18 }}>Modifier le médicament</div>
-          {inp("Nom", "name")}{inp("À quoi il sert", "role")}{inp("Dose", "dose")}{inp("Moment de prise", "moment")}
+          {inp("Nom", "name")}{inp("À quoi il sert", "role")}{inp("Dose", "dose")}{inp("Moment de prise", "moment_prise")}
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
             <button onClick={() => setEditingMed(null)} style={{ flex: 1, padding: 13, background: G5, color: G2, border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
             <button onClick={() => saveMedEdit(mo, med.id, f)} style={{ flex: 2, padding: 13, background: B, color: W, border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
@@ -225,7 +362,6 @@ export default function RosaCare() {
   // ── ACCUEIL ──────────────────────────────────────────────
   const Accueil = () => (
     <div style={{ paddingBottom: 28, overflowX: "hidden" }}>
-     
       <div style={{ padding: "20px 16px 0" }}>
         <div style={{ marginBottom: 22 }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Tableau de bord</div>
@@ -300,7 +436,7 @@ export default function RosaCare() {
 
         <SectionLabel>Citation du jour</SectionLabel>
         <Card style={{ textAlign: "center", padding: "20px 18px", marginBottom: 18 }}>
-         <div style={{ fontSize: 32, color: G3, opacity: 0.25, lineHeight: 0.7, marginBottom: 12, fontFamily: "Georgia, serif" }}>"</div>
+          <div style={{ fontSize: 32, color: G3, opacity: 0.25, lineHeight: 0.7, marginBottom: 12, fontFamily: "Georgia, serif" }}>"</div>
           <div style={{ fontSize: 15, color: G2, lineHeight: 1.7, fontStyle: "italic" }}>"{phrase.t}"</div>
           {phrase.a && <div style={{ fontSize: 12, color: G3, marginTop: 10, fontWeight: 600 }}>— {phrase.a}</div>}
         </Card>
@@ -383,8 +519,7 @@ export default function RosaCare() {
 
   // ── MÉDICAMENTS ──────────────────────────────────────────
   const Medicaments = () => {
-    const [list, setList] = getMedList();
-    const checked = list.filter(m => m.checked).length;
+    const [list] = getMedList();
     return (
       <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
         {editingMed && <EditModal med={editingMed.med} mo={editingMed.mo} />}
@@ -403,47 +538,51 @@ export default function RosaCare() {
             <div style={{ fontSize: 12, color: "#7A5400", fontWeight: 600, lineHeight: 1.5 }}>Commencer par le Pantoprazole 1h avant les autres médicaments, à jeun strict.</div>
           </div>
         )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-          {list.map(med => (
-            <div key={med.id} style={{ background: W, borderRadius: 14, padding: "14px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)", display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div onClick={() => toggleMed(list, setList, med.id)} style={{ flex: 1, cursor: "pointer" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: med.checked ? G4 : G1, textDecoration: med.checked ? "line-through" : "none", marginBottom: 3 }}>{med.name}</div>
-                <div style={{ fontSize: 12, color: med.alert ? OR : G3, marginBottom: 5, lineHeight: 1.4 }}>{med.role}</div>
-                {med.dose && (
-                  <div style={{ display: "inline-flex", alignItems: "center", background: BG, borderRadius: 6, padding: "3px 9px" }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: B }}>{med.dose}</span>
-                    {med.moment ? <span style={{ fontSize: 12, color: G3, marginLeft: 5 }}>· {med.moment}</span> : null}
-                  </div>
-                )}
-                {moment === "mensuel" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8 }}>
-                    <span style={{ fontSize: 11, color: G3, fontWeight: 600 }}>Dernière prise :</span>
-                    <input type="date" value={med.datePrise || ""} onChange={e => updDate(med.id, e.target.value)} style={{ fontSize: 12, border: `1px solid ${G5}`, borderRadius: 7, padding: "3px 8px", color: G1, background: BG, outline: "none", fontFamily: "inherit" }} />
-                  </div>
-                )}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center", paddingTop: 1 }}>
-                <div onClick={() => toggleMed(list, setList, med.id)} style={{ width: 26, height: 26, borderRadius: 7, background: med.checked ? B : W, border: `2px solid ${med.checked ? B : med.alert ? OR : G5}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                  {med.checked && <Icon name="check" size={13} color={W} strokeWidth={2.5} />}
+        {!medsLoaded ? (
+          <div style={{ textAlign: "center", padding: 40, color: G3, fontSize: 14 }}>Chargement…</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+            {list.map(med => (
+              <div key={med.id} style={{ background: W, borderRadius: 14, padding: "14px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.05)", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div onClick={() => toggleMed(list, moment === "matin" ? setMedsMatin : moment === "soir" ? setMedsSoir : setMedsMensuel, med.id, moment)} style={{ flex: 1, cursor: "pointer" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: med.checked ? G4 : G1, textDecoration: med.checked ? "line-through" : "none", marginBottom: 3 }}>{med.name}</div>
+                  <div style={{ fontSize: 12, color: med.alert ? OR : G3, marginBottom: 5, lineHeight: 1.4 }}>{med.role}</div>
+                  {med.dose && (
+                    <div style={{ display: "inline-flex", alignItems: "center", background: BG, borderRadius: 6, padding: "3px 9px" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: B }}>{med.dose}</span>
+                      {med.moment_prise ? <span style={{ fontSize: 12, color: G3, marginLeft: 5 }}>· {med.moment_prise}</span> : null}
+                    </div>
+                  )}
+                  {moment === "mensuel" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8 }}>
+                      <span style={{ fontSize: 11, color: G3, fontWeight: 600 }}>Dernière prise :</span>
+                      <input type="date" value={med.date_prise || ""} onChange={e => updDate(med.id, e.target.value)} style={{ fontSize: 12, border: `1px solid ${G5}`, borderRadius: 7, padding: "3px 8px", color: G1, background: BG, outline: "none", fontFamily: "inherit" }} />
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => setEditingMed({ med, mo: moment })} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-                  <Icon name="edit" size={15} color={G3} />
-                </button>
-                <button onClick={() => delMed(moment, med.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-                  <Icon name="trash" size={15} color={G4} />
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center", paddingTop: 1 }}>
+                  <div onClick={() => toggleMed(list, moment === "matin" ? setMedsMatin : moment === "soir" ? setMedsSoir : setMedsMensuel, med.id, moment)} style={{ width: 26, height: 26, borderRadius: 7, background: med.checked ? B : W, border: `2px solid ${med.checked ? B : med.alert ? OR : G5}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                    {med.checked && <Icon name="check" size={13} color={W} strokeWidth={2.5} />}
+                  </div>
+                  <button onClick={() => setEditingMed({ med, mo: moment })} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                    <Icon name="edit" size={15} color={G3} />
+                  </button>
+                  <button onClick={() => delMed(moment, med.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                    <Icon name="trash" size={15} color={G4} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button onClick={() => { const [l, s] = getMedList(); s(l.map(m => ({ ...m, checked: true }))); }} style={{ flex: 1, background: GR, color: W, border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Valider {moment}</button>
+          <button onClick={() => valAll(moment)} style={{ flex: 1, background: GR, color: W, border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✓ Valider {moment}</button>
           <button onClick={() => setShowAddMed(v => !v)} style={{ flex: 1, background: BL, color: B, border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Ajouter</button>
         </div>
         {showAddMed && (
           <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: G1, marginBottom: 12 }}>Nouveau médicament</div>
-            {[{ ph: "Nom *", key: "name" }, { ph: "À quoi il sert", key: "role" }, { ph: "Dose (ex: 1 comprimé)", key: "dose" }, { ph: "Moment (ex: pendant le repas)", key: "moment" }].map(({ ph, key }) => (
+            {[{ ph: "Nom *", key: "name" }, { ph: "À quoi il sert", key: "role" }, { ph: "Dose (ex: 1 comprimé)", key: "dose" }, { ph: "Moment (ex: pendant le repas)", key: "moment_prise" }].map(({ ph, key }) => (
               <input key={key} placeholder={ph} onChange={e => { newMed.current[key] = e.target.value; }} style={{ width: "100%", border: `1px solid ${G5}`, background: W, borderRadius: 10, padding: "11px 13px", fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
             ))}
             <div style={{ display: "flex", gap: 8 }}>
@@ -495,6 +634,10 @@ export default function RosaCare() {
       </div>
       {showNote && (
         <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <select value={noteAuteur} onChange={e => setNoteAuteur(e.target.value)} style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", fontFamily: "inherit" }}>
+            <option value="Lila">Lila</option>
+            <option value="Rosa">Rosa</option>
+          </select>
           <textarea ref={noteRef} placeholder="Écrivez votre note ici..." style={{ width: "100%", minHeight: 90, border: `1px solid ${G5}`, background: W, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", lineHeight: 1.6 }} />
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button onClick={() => setShowNote(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
@@ -514,7 +657,16 @@ export default function RosaCare() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {notes.filter(n => n.categorie === cat).map((note, i) => (
                 <Card key={note.id || i} style={{ marginBottom: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: B, marginBottom: 6 }}>{fmtD(note.created_at)}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: B }}>{fmtD(note.created_at)}</div>
+                      {note.auteur && <div style={{ fontSize: 11, color: G3, marginTop: 2 }}>{note.auteur}</div>}
+                    </div>
+                    <button onClick={async () => {
+                      await supabase.from("carnet").delete().eq("id", note.id);
+                      setNotes(prev => prev.filter(n => n.id !== note.id));
+                    }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
+                  </div>
                   <div style={{ fontSize: 14, color: G2, lineHeight: 1.6 }}>{note.texte}</div>
                 </Card>
               ))}
@@ -582,13 +734,9 @@ export default function RosaCare() {
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif", background: "#C8C8CE", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px 0" }}>
       <div style={{ width: 390, height: 844, background: BG, borderRadius: 54, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 60px 140px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.2)", flexShrink: 0 }}>
-        <div style={{ background: W, padding: "16px 28px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: G1 }}>9:41</span>
-          <span style={{ fontSize: 13, color: G1 }}>●●● ▮</span>
-        </div>
+
         <div style={{ background: W, padding: "10px 20px 12px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
-          <img src="/rosacare-logo.png" alt="RosaCare"
-            style={{ height: 52, maxWidth: "75%", objectFit: "contain", display: "block" }}
+          <img src="/rosacare-logo.png" alt="RosaCare" style={{ height: 62, maxWidth: "80%", objectFit: "contain", display: "block" }}
             onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "block"; }} />
           <div style={{ display: "none", fontSize: 22, fontWeight: 800, color: B, letterSpacing: "-0.8px" }}>Rosa<span style={{ fontWeight: 300, color: G3 }}>Care</span></div>
         </div>
