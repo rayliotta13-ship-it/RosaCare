@@ -91,7 +91,7 @@ const TABS = [
   { id: "accueil", label: "Accueil" },
   { id: "presence", label: "Présence" },
   { id: "medicaments", label: "Médicaments" },
-  { id: "carnet", label: "Carnet" },
+  { id: "carnet", label: "Journal" },
   { id: "nutrition", label: "Nutrition" },
 ];
 
@@ -164,6 +164,9 @@ export default function RosaCare() {
   const [notes, setNotes] = useState([]);
   const [showNote, setShowNote] = useState(false);
   const [noteAuteur, setNoteAuteur] = useState("Lila");
+  const [rdvList, setRdvList] = useState([]);
+  const [showRdv, setShowRdv] = useState(false);
+  const [rdvDraft, setRdvDraft] = useState({ id: null, titre: "", date: "", heure: "", lieu: "", commentaire: "" });
   const [noteCat, setNoteCat] = useState("Observations");
   const [photo, setPhoto] = useState(null);
   const [presences, setPresences] = useState([]);
@@ -213,16 +216,22 @@ export default function RosaCare() {
     const { data } = await supabase.from("carnet").select("*").order("created_at", { ascending: false });
     if (data) setNotes(data);
   };
+  const fetchRdv = async () => {
+  const { data } = await supabase.from("rendezVous").select("*").order("date_rdv", { ascending: true });
+  if (data) setRdvList(data);
+};
 
   useEffect(() => {
     fetchMeds();
     fetchPresences();
     fetchNotes();
+    fetchRdv();
 
     const channel = supabase
       .channel("rosacare-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "presences" }, () => fetchPresences())
       .on("postgres_changes", { event: "*", schema: "public", table: "carnet" }, () => fetchNotes())
+      .on("postgres_changes", { event: "*", schema: "public", table: "rendezVous" }, () => fetchRdv())
       .on("postgres_changes", { event: "*", schema: "public", table: "medicaments" }, () => fetchMeds())
       .subscribe();
 
@@ -618,62 +627,88 @@ export default function RosaCare() {
   };
 
   // ── CARNET ───────────────────────────────────────────────
-  const Carnet = () => (
-    <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Mon carnet</div>
-          <div style={{ fontSize: 13, color: G3, marginTop: 2 }}>Notes et rendez-vous</div>
-        </div>
-        <button onClick={() => setShowNote(v => !v)} style={{ width: 42, height: 42, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(26,107,138,0.28)", flexShrink: 0 }}>+</button>
-      </div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
-        {["Observations", "Rendez-vous"].map(cat => (
-          <button key={cat} onClick={() => setNoteCat(cat)} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, background: noteCat === cat ? B : G5, color: noteCat === cat ? W : G2, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{cat}</button>
-        ))}
-      </div>
-      {showNote && (
-        <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
-          <select value={noteAuteur} onChange={e => setNoteAuteur(e.target.value)} style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", fontFamily: "inherit" }}>
-            <option value="Lila">Lila</option>
-            <option value="Rosa">Rosa</option>
-          </select>
-          <textarea ref={noteRef} placeholder="Écrivez votre note ici..." style={{ width: "100%", minHeight: 90, border: `1px solid ${G5}`, background: W, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", lineHeight: 1.6 }} />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button onClick={() => setShowNote(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
-            <button onClick={addNote} style={{ flex: 2, padding: 11, background: B, color: W, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
-          </div>
+  {noteCat === "Observations" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {notes.filter(n => n.categorie === "Observations").length === 0 ? (
+            <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.18 }}>📋</div>
+              <div style={{ fontSize: 13, color: G4 }}>Aucune note enregistrée</div>
+            </div>
+          ) : notes.filter(n => n.categorie === "Observations").map((note, i) => (
+            <Card key={note.id || i} style={{ marginBottom: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: B }}>{fmtD(note.created_at)}</div>
+                  {note.auteur && <div style={{ fontSize: 11, color: G3, marginTop: 2 }}>{note.auteur}</div>}
+                </div>
+                <button onClick={async () => {
+                  await supabase.from("carnet").delete().eq("id", note.id);
+                  setNotes(prev => prev.filter(n => n.id !== note.id));
+                }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
+              </div>
+              <div style={{ fontSize: 14, color: G2, lineHeight: 1.6 }}>{note.texte}</div>
+            </Card>
+          ))}
         </div>
       )}
-      {["Observations", "Rendez-vous"].map(cat => (
-        <div key={cat} style={{ marginBottom: 22 }}>
-          <SectionLabel>{cat}</SectionLabel>
-          {notes.filter(n => n.categorie === cat).length === 0 ? (
-            <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.18 }}>{cat === "Observations" ? "📋" : "📅"}</div>
-              <div style={{ fontSize: 13, color: G4, fontWeight: 500 }}>Aucune note enregistrée</div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {notes.filter(n => n.categorie === cat).map((note, i) => (
-                <Card key={note.id || i} style={{ marginBottom: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: B }}>{fmtD(note.created_at)}</div>
-                      {note.auteur && <div style={{ fontSize: 11, color: G3, marginTop: 2 }}>{note.auteur}</div>}
-                    </div>
-                    <button onClick={async () => {
-                      await supabase.from("carnet").delete().eq("id", note.id);
-                      setNotes(prev => prev.filter(n => n.id !== note.id));
-                    }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
-                  </div>
-                  <div style={{ fontSize: 14, color: G2, lineHeight: 1.6 }}>{note.texte}</div>
-                </Card>
+
+      {noteCat === "Rendez-vous" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+            <button onClick={() => { setRdvDraft({ id: null, titre: "", date: "", heure: "", lieu: "", commentaire: "" }); setShowRdv(true); }}
+              style={{ width: 34, height: 34, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+          </div>
+          {showRdv && (
+            <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: G1, marginBottom: 10 }}>{rdvDraft.id ? "Modifier" : "Ajouter un rendez-vous"}</div>
+              {[{ ph: "Titre (ex: Cardiologue)", key: "titre", type: "text" }, { ph: "", key: "date", type: "date" }, { ph: "", key: "heure", type: "time" }, { ph: "Lieu", key: "lieu", type: "text" }].map(({ ph, key, type }) => (
+                <input key={key} type={type} placeholder={ph} value={rdvDraft[key]} onChange={e => setRdvDraft(d => ({ ...d, [key]: e.target.value }))}
+                  style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
               ))}
+              <textarea placeholder="Commentaire (optionnel)" value={rdvDraft.commentaire} onChange={e => setRdvDraft(d => ({ ...d, commentaire: e.target.value }))}
+                style={{ width: "100%", minHeight: 70, border: `1px solid ${G5}`, background: W, borderRadius: 10, padding: "10px 13px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 8 }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowRdv(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+                <button onClick={async () => {
+                  if (!rdvDraft.titre.trim() || !rdvDraft.date) return;
+                  if (rdvDraft.id) {
+                    await supabase.from("rendezVous").update({ titre: rdvDraft.titre, date_rdv: rdvDraft.date, heure: rdvDraft.heure, lieu: rdvDraft.lieu, commentaire: rdvDraft.commentaire }).eq("id", rdvDraft.id);
+                  } else {
+                    await supabase.from("rendezVous").insert([{ titre: rdvDraft.titre, date_rdv: rdvDraft.date, heure: rdvDraft.heure, lieu: rdvDraft.lieu, commentaire: rdvDraft.commentaire }]);
+                  }
+                  await fetchRdv();
+                  setShowRdv(false);
+                }} style={{ flex: 2, padding: 11, background: B, color: W, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
+              </div>
             </div>
           )}
+          {rdvList.length === 0 ? (
+            <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.18 }}>📅</div>
+              <div style={{ fontSize: 13, color: G4 }}>Aucun rendez-vous enregistré</div>
+            </div>
+          ) : rdvList.map(rdv => (
+            <Card key={rdv.id} style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: G1, marginBottom: 4 }}>{rdv.titre}</div>
+                  <div style={{ fontSize: 13, color: B, fontWeight: 600 }}>📅 {rdv.date_rdv ? new Date(rdv.date_rdv).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : ""} {rdv.heure && `· ${rdv.heure}`}</div>
+                  {rdv.lieu && <div style={{ fontSize: 12, color: G3, marginTop: 2 }}>📍 {rdv.lieu}</div>}
+                  {rdv.commentaire && <div style={{ fontSize: 12, color: G3, marginTop: 4, fontStyle: "italic" }}>{rdv.commentaire}</div>}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => { setRdvDraft({ id: rdv.id, titre: rdv.titre, date: rdv.date_rdv, heure: rdv.heure, lieu: rdv.lieu, commentaire: rdv.commentaire }); setShowRdv(true); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G3, padding: 4 }}>✏️</button>
+                  <button onClick={async () => {
+                    await supabase.from("rendezVous").delete().eq("id", rdv.id);
+                    setRdvList(prev => prev.filter(r => r.id !== rdv.id));
+                  }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      ))}
+      )}
       <div style={{ height: 20 }} />
     </div>
   );
