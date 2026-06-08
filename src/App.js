@@ -570,7 +570,7 @@ export default function RosaCare() {
                   {moment === "mensuel" && (
                     <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8 }}>
                       <span style={{ fontSize: 11, color: G3, fontWeight: 600 }}>Dernière prise :</span>
-                      <input type="date" value={med.date_prise || ""} onChange={e => updDate(med.id, e.target.value)} style={{ fontSize: 12, border: `1px solid ${G5}`, borderRadius: 7, padding: "3px 8px", color: G1, background: BG, outline: "none", fontFamily: "inherit" }} />
+                      <input type="date" value={med.date_prise || ""} onChange={e => updDate(med.id, e.target.value)} onClick={e => e.stopPropagation()} style={{ fontSize: 12, border: `1px solid ${G5}`, borderRadius: 7, padding: "3px 8px", color: G1, background: BG, outline: "none", fontFamily: "inherit" }} />
                     </div>
                   )}
                 </div>
