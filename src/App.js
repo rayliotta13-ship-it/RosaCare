@@ -815,7 +815,7 @@ export default function RosaCare() {
       <div style={{ width: 390, height: 844, background: BG, borderRadius: 54, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 60px 140px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.2)", flexShrink: 0 }}>
 
         <div style={{ background: W, padding: "50px 20px 16px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
-          <img src={process.env.public_url + '/rosacare-logo.png'}  alt="RosaCare" style={{ height: 62, maxWidth: "80%", objectFit: "contain", display: "block" }}
+          src={process.env.PUBLIC_URL + '/rosacare-logo.png'}  alt="RosaCare" style={{ height: 62, maxWidth: "80%", objectFit: "contain", display: "block" }}
             onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "block"; }} />
           <div style={{ display: "none", fontSize: 22, fontWeight: 800, color: B, letterSpacing: "-0.8px" }}>Rosa<span style={{ fontWeight: 300, color: G3 }}>Care</span></div>
         </div>
