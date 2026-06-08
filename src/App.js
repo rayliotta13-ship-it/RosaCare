@@ -627,7 +627,34 @@ export default function RosaCare() {
   };
 
   // ── CARNET ───────────────────────────────────────────────
-  {noteCat === "Observations" && (
+  const Carnet = () => (
+    <div style={{ padding: "20px 16px 28px", overflowX: "hidden" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Mon journal</div>
+          <div style={{ fontSize: 13, color: G3, marginTop: 2 }}>Notes et rendez-vous</div>
+        </div>
+        <button onClick={() => setShowNote(v => !v)} style={{ width: 42, height: 42, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(26,107,138,0.28)", flexShrink: 0 }}>+</button>
+      </div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+        {["Observations", "Rendez-vous"].map(cat => (
+          <button key={cat} onClick={() => setNoteCat(cat)} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, background: noteCat === cat ? B : G5, color: noteCat === cat ? W : G2, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{cat}</button>
+        ))}
+      </div>
+      {showNote && noteCat === "Observations" && (
+        <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <select value={noteAuteur} onChange={e => setNoteAuteur(e.target.value)} style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", fontFamily: "inherit" }}>
+            <option value="Lila">Lila</option>
+            <option value="Rosa">Rosa</option>
+          </select>
+          <textarea ref={noteRef} placeholder="Écrivez votre note ici..." style={{ width: "100%", minHeight: 90, border: `1px solid ${G5}`, background: W, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", lineHeight: 1.6 }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => setShowNote(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+            <button onClick={addNote} style={{ flex: 2, padding: 11, background: B, color: W, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Enregistrer</button>
+          </div>
+        </div>
+      )}
+      {noteCat === "Observations" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {notes.filter(n => n.categorie === "Observations").length === 0 ? (
             <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center" }}>
@@ -651,7 +678,6 @@ export default function RosaCare() {
           ))}
         </div>
       )}
-
       {noteCat === "Rendez-vous" && (
         <div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
@@ -705,15 +731,14 @@ export default function RosaCare() {
                   }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
                 </div>
               </div>
-           </Card>
+            </Card>
           ))}
         </div>
       )}
-      </div>
       <div style={{ height: 20 }} />
     </div>
   );
-
+  
   // ── NUTRITION ────────────────────────────────────────────
   const Nutrition = () => {
     const cat = NUTRITION[nutr];
