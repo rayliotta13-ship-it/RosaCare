@@ -815,7 +815,7 @@ export default function RosaCare() {
       <div style={{ width: 390, height: 844, background: BG, borderRadius: 54, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 60px 140px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.2)", flexShrink: 0 }}>
 
         <div style={{ background: W, padding: "50px 20px 16px", borderBottom: `1px solid ${G5}`, display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
-          <img src="/rosacare-logo.png" alt="RosaCare" style={{ height: 110, maxWidth: "90%", objectFit: "contain", display: "block" }} />
+          <img src="/rosacare-logo.png" alt="RosaCare" style={{ height: 140, maxWidth: "95%", objectFit: "contain", display: "block" }} />
         </div>
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
           <Screen />
