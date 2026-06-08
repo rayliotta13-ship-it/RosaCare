@@ -89,10 +89,10 @@ const NUTRITION = {
 
 const TABS = [
   { id: "accueil", label: "Accueil" },
-  { id: "presence", label: "Présence" },
-  { id: "medicaments", label: "Médicaments" },
   { id: "carnet", label: "Journal" },
+  { id: "medicaments", label: "Médicaments" },
   { id: "nutrition", label: "Nutrition" },
+  { id: "presence", label: "Présence" },
 ];
 
 const Icon = ({ name, size = 22, color = G4, strokeWidth = 1.7 }) => {
@@ -167,7 +167,7 @@ export default function RosaCare() {
   const [rdvList, setRdvList] = useState([]);
   const [showRdv, setShowRdv] = useState(false);
   const [rdvDraft, setRdvDraft] = useState({ id: null, titre: "", date: "", heure: "", lieu: "", commentaire: "" });
-  const [noteCat, setNoteCat] = useState("Observations");
+  const [noteCat, setNoteCat] = useState("Notes");
   const [photo, setPhoto] = useState(null);
   const [presences, setPresences] = useState([]);
   const [loadingP, setLoadingP] = useState(false);
@@ -642,10 +642,16 @@ export default function RosaCare() {
         
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
-        {["Observations", "Rendez-vous"].map(cat => (
+        {["Notes", "Rendez-vous"].map(cat => (
           <button key={cat} onClick={() => setNoteCat(cat)} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, background: noteCat === cat ? B : G5, color: noteCat === cat ? W : G2, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{cat}</button>
         ))}
       </div>
+      {noteCat === "Notes" && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <button onClick={() => setShowNote(v => !v)}
+            style={{ width: 34, height: 34, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+        </div>
+      )}
       {showNote && noteCat ==="Notes" && (
         <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
           <select value={noteAuteur} onChange={e => setNoteAuteur(e.target.value)} style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", fontFamily: "inherit" }}>
