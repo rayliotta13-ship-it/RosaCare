@@ -705,10 +705,11 @@ export default function RosaCare() {
                   }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: G4, padding: 4 }}>🗑️</button>
                 </div>
               </div>
-            </Card>
+           </Card>
           ))}
         </div>
       )}
+      </div>
       <div style={{ height: 20 }} />
     </div>
   );
