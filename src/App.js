@@ -174,6 +174,11 @@ export default function RosaCare() {
 
   const newMed = useRef({ name: "", role: "", dose: "", moment_prise: "" });
   const noteRef = useRef(null);
+  const rdvTitreRef = useRef(null);
+  const rdvDateRef = useRef(null);
+  const rdvHeureRef = useRef(null);
+  const rdvLieuRef = useRef(null);
+  const rdvCommentaireRef = useRef(null);
   const photoRef = useRef(null);
 
   // ── Charger médicaments depuis Supabase ──────────────────
@@ -634,14 +639,14 @@ export default function RosaCare() {
           <div style={{ fontSize: 20, fontWeight: 700, color: G1, letterSpacing: "-0.4px" }}>Mon journal</div>
           <div style={{ fontSize: 13, color: G3, marginTop: 2 }}>Notes et rendez-vous</div>
         </div>
-        <button onClick={() => setShowNote(v => !v)} style={{ width: 42, height: 42, background: B, color: W, border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 12px rgba(26,107,138,0.28)", flexShrink: 0 }}>+</button>
+        
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
         {["Observations", "Rendez-vous"].map(cat => (
           <button key={cat} onClick={() => setNoteCat(cat)} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, background: noteCat === cat ? B : G5, color: noteCat === cat ? W : G2, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{cat}</button>
         ))}
       </div>
-      {showNote && noteCat === "Observations" && (
+      {showNote && noteCat ==="Notes" && (
         <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 16 }}>
           <select value={noteAuteur} onChange={e => setNoteAuteur(e.target.value)} style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", fontFamily: "inherit" }}>
             <option value="Lila">Lila</option>
@@ -654,14 +659,14 @@ export default function RosaCare() {
           </div>
         </div>
       )}
-      {noteCat === "Observations" && (
+      {noteCat ==="Notes" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {notes.filter(n => n.categorie === "Observations").length === 0 ? (
+          {notes.filter(n => n.categorie ==="Notes").length === 0 ? (
             <div style={{ background: W, borderRadius: 14, padding: "22px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.18 }}>📋</div>
               <div style={{ fontSize: 13, color: G4 }}>Aucune note enregistrée</div>
             </div>
-          ) : notes.filter(n => n.categorie === "Observations").map((note, i) => (
+          ) : notes.filter(n => n.categorie ==="Notes").map((note, i) => (
             <Card key={note.id || i} style={{ marginBottom: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <div>
@@ -687,20 +692,27 @@ export default function RosaCare() {
           {showRdv && (
             <div style={{ background: BG, borderRadius: 14, padding: 16, marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: G1, marginBottom: 10 }}>{rdvDraft.id ? "Modifier" : "Ajouter un rendez-vous"}</div>
-              {[{ ph: "Titre (ex: Cardiologue)", key: "titre", type: "text" }, { ph: "", key: "date", type: "date" }, { ph: "", key: "heure", type: "time" }, { ph: "Lieu", key: "lieu", type: "text" }].map(({ ph, key, type }) => (
-                <input key={key} type={type} placeholder={ph} value={rdvDraft[key]} onChange={e => setRdvDraft(d => ({ ...d, [key]: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
-              ))}
-              <textarea placeholder="Commentaire (optionnel)" value={rdvDraft.commentaire} onChange={e => setRdvDraft(d => ({ ...d, commentaire: e.target.value }))}
+              <input ref={rdvTitreRef} type="text" placeholder="Titre (ex: Cardiologue)" defaultValue={rdvDraft.titre}
+                style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+              <input ref={rdvDateRef} type="date" defaultValue={rdvDraft.date}
+                style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box" }} />
+              <input ref={rdvHeureRef} type="time" defaultValue={rdvDraft.heure}
+                style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box" }} />
+              <input ref={rdvLieuRef} type="text" placeholder="Lieu (ex: Clinique Saint-Jean)" defaultValue={rdvDraft.lieu}
+                style={{ width: "100%", padding: "10px 13px", border: `1px solid ${G5}`, background: W, borderRadius: 10, fontSize: 14, color: G1, marginBottom: 8, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+              <textarea ref={rdvCommentaireRef} placeholder="Commentaire (optionnel)" defaultValue={rdvDraft.commentaire}
                 style={{ width: "100%", minHeight: 70, border: `1px solid ${G5}`, background: W, borderRadius: 10, padding: "10px 13px", fontSize: 14, color: G1, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setShowRdv(false)} style={{ flex: 1, padding: 11, background: W, color: G3, border: `1px solid ${G5}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
                 <button onClick={async () => {
-                  if (!rdvDraft.titre.trim() || !rdvDraft.date) return;
+                  const titre = rdvTitreRef.current?.value?.trim();
+                  const date = rdvDateRef.current?.value;
+                  if (!titre || !date) return;
+                  const payload = { titre, date_rdv: date, heure: rdvHeureRef.current?.value || "", lieu: rdvLieuRef.current?.value?.trim() || "", commentaire: rdvCommentaireRef.current?.value?.trim() || "" };
                   if (rdvDraft.id) {
-                    await supabase.from("rendezVous").update({ titre: rdvDraft.titre, date_rdv: rdvDraft.date, heure: rdvDraft.heure, lieu: rdvDraft.lieu, commentaire: rdvDraft.commentaire }).eq("id", rdvDraft.id);
+                    await supabase.from("rendezVous").update(payload).eq("id", rdvDraft.id);
                   } else {
-                    await supabase.from("rendezVous").insert([{ titre: rdvDraft.titre, date_rdv: rdvDraft.date, heure: rdvDraft.heure, lieu: rdvDraft.lieu, commentaire: rdvDraft.commentaire }]);
+                    await supabase.from("rendezVous").insert([payload]);
                   }
                   await fetchRdv();
                   setShowRdv(false);
@@ -738,7 +750,7 @@ export default function RosaCare() {
       <div style={{ height: 20 }} />
     </div>
   );
-  
+
   // ── NUTRITION ────────────────────────────────────────────
   const Nutrition = () => {
     const cat = NUTRITION[nutr];
